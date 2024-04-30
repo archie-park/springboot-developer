@@ -79,20 +79,20 @@ if (logoutButton) {
       localStorage.removeItem("access_token");
 
       // 쿠키에 저장된 리프레시 토큰을 삭제
-      deleteCookie('refresh_token');
-      location.replace('/login');
+      deleteCookie("refresh_token");
+      location.replace("/login");
     }
     function fail() {
-      alert('로그아웃 실패했습니다.');
+      alert("로그아웃 실패했습니다.");
     }
 
-    httpRequest('DELETE', '/api/refresh-token', null, success, fail);
+    httpRequest("DELETE", "/api/refresh-token", null, success, fail);
   });
 }
 
 // 쿠키를 삭제하는 함수
-function deleteCookie(name){
-  document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+function deleteCookie(name) {
+  document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
 }
 
 // 쿠키를 가져오는 함수
@@ -151,5 +151,28 @@ function httpRequest(method, url, body, success, fail) {
     } else {
       return fail();
     }
+  });
+}
+
+// 댓글 생성 기능
+const commentCreateButton = document.getElementById("comment-create-btn");
+if (commentCreateButton) {
+  commentCreateButton.addEventListener("click", (event) => {
+    articleId = document.getElementById("article-id").value;
+
+    body = JSON.stringify({
+      articleId: articleId,
+      content: document.getElementById("content").value,
+    });
+    function success() {
+      alert("등록 완료 되었습니다.");
+      location.replace("/articles/" + articleId);
+    }
+    function fail() {
+      alert("등록 실패했습니다.");
+      location.replace("/articles/" + articleId);
+    }
+
+    httpRequest("POST", "/api/comments", body, success, fail);
   });
 }

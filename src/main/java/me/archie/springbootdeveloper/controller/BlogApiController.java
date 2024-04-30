@@ -15,7 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 import me.archie.springbootdeveloper.domain.Article;
+import me.archie.springbootdeveloper.domain.Comment;
 import me.archie.springbootdeveloper.dto.AddArticleRequest;
+import me.archie.springbootdeveloper.dto.AddCommentRequest;
+import me.archie.springbootdeveloper.dto.AddCommentResponse;
 import me.archie.springbootdeveloper.dto.ArticleResponse;
 import me.archie.springbootdeveloper.dto.UpdateArticleRequest;
 import me.archie.springbootdeveloper.service.BlogService;
@@ -62,5 +65,11 @@ public class BlogApiController {
     Article updatedArticle = blogService.update(id, request);
 
     return ResponseEntity.ok().body(updatedArticle);
+  }
+
+  @PostMapping("/api/comments")
+  public ResponseEntity<AddCommentResponse> addComment(@RequestBody AddCommentRequest request, Principal principal){
+    Comment savedComment = blogService.addComment(request, principal.getName());
+    return ResponseEntity.status(HttpStatus.CREATED).body(new AddCommentResponse(savedComment));
   }
 }

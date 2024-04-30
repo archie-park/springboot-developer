@@ -26,10 +26,13 @@ import org.springframework.web.context.WebApplicationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import me.archie.springbootdeveloper.domain.Article;
+import me.archie.springbootdeveloper.domain.Comment;
 import me.archie.springbootdeveloper.domain.User;
 import me.archie.springbootdeveloper.dto.AddArticleRequest;
+import me.archie.springbootdeveloper.dto.AddCommentRequest;
 import me.archie.springbootdeveloper.dto.UpdateArticleRequest;
 import me.archie.springbootdeveloper.repository.BlogRepository;
+import me.archie.springbootdeveloper.repository.CommentRepository;
 import me.archie.springbootdeveloper.repository.UserRepository;
 
 @SpringBootTest // 테스트용 애플리케이션 컨텍스트
@@ -51,16 +54,20 @@ public class BlogApiControllerTest {
   @Autowired
   UserRepository userRepository;
 
+  @Autowired
+  CommentRepository commentRepository;
+
   User user;
 
   @BeforeEach // 테스트 실행 전 실행하는 메서드
   public void mockMvcSetup() {
     this.mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
     blogRepository.deleteAll();
+    commentRepository.deleteAll();
   }
 
   @BeforeEach
-  void setSecurityContext(){
+  void setSecurityContext() {
     userRepository.deleteAll();
     user = userRepository.save(User.builder().email("user@email.com").password("test").build());
 
@@ -132,7 +139,7 @@ public class BlogApiControllerTest {
 
   @DisplayName("deleteArticle: 블로그 글 삭제에 성공한다.")
   @Test
-  public void deleteArticle() throws Exception{
+  public void deleteArticle() throws Exception {
     // given
     final String url = "/api/articles/{id}";
     Article savedArticle = createDefaultArticle();
@@ -157,8 +164,9 @@ public class BlogApiControllerTest {
 
     UpdateArticleRequest request = new UpdateArticleRequest(newTitle, newContent);
 
-    //when
-    ResultActions result = mockMvc.perform(put(url, savedArticle.getId()).contentType(MediaType.APPLICATION_JSON_VALUE).content(objectMapper.writeValueAsString(request)));
+    // when
+    ResultActions result = mockMvc.perform(put(url, savedArticle.getId()).contentType(MediaType.APPLICATION_JSON_VALUE)
+        .content(objectMapper.writeValueAsString(request)));
 
     // then
     result.andExpect(status().isOk());
@@ -171,5 +179,34 @@ public class BlogApiControllerTest {
 
   private Article createDefaultArticle() {
     return blogRepository.save(Article.builder().title("title").author(user.getUsername()).content("content").build());
+  }
+
+  @DisplayName("addComment: 댓글 추가에 성공한다.")
+  @Test
+  public void addComment() throws Exception {
+    // given
+    final String url = "/api/comments";
+
+    Article savedArticle = createDefaultArticle();
+    final Long articleId = savedArticle.getId();
+    final String content = "content";
+    final AddCommentRequest userRequest = new AddCommentRequest(articleId, content);
+    final String requestBody = objectMapper.writeValueAsString(userRequest);
+
+    Principal principal = Mockito.mock(Principal.class);
+    Mockito.when(principal.getName()).thenReturn("username");
+
+    // when
+    ResultActions result = mockMvc
+        .perform(post(url).contentType(MediaType.APPLICATION_JSON_VALUE).principal(principal).content(requestBody));
+    
+    // then
+    result.andExpect(status().isCreated());
+
+    List<Comment> comments = commentRepository.findAll();
+
+    assertThat(comments.size()).isEqualTo(1);
+    assertThat(comments.get(0).getArticle().getId()).isEqualTo(articleId);
+    assertThat(comments.get(0).getContent()).isEqualTo(content);
   }
 }
